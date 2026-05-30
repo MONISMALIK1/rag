@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rag"
+version = "0.1.0"
+description = "RAG: Retrieval-Augmented Generation (Lewis et al., 2020) with a from-scratch BM25 retriever"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.11"
+dependencies = []   # zero third-party deps — pure stdlib + OpenRouter HTTP
+
+[project.scripts]
+rag = "rag.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["rag*"]
+
+[tool.setuptools.package-data]
+rag = ["py.typed"]
