@@ -196,6 +196,19 @@ rag/
 }
 ```
 
+## Related — RAG variants
+
+This implements the original RAG (retrieve with the raw query). Three from-scratch
+follow-ups build on it:
+
+- **[hyde](https://github.com/MONISMALIK1/hyde)** — retrieve with an LLM-written
+  *hypothetical answer document* instead of the raw query (Gao et al., 2022).
+- **[self_rag](https://github.com/MONISMALIK1/self_rag)** — grade the retrieved
+  passages and **abstain** when they're weak (Asai et al., 2023).
+- **[corrective_rag](https://github.com/MONISMALIK1/corrective_rag)** — grade
+  retrieval and **correct** it: refine, fall back to external knowledge, or combine
+  (Yan et al., 2024).
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
