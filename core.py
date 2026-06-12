@@ -18,6 +18,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from .expand import expand_query
 from .llm import chat
 from .prompts import NO_CONTEXT_PROMPT, RAG_PROMPT, extract_citations, format_context
 from .rerank import mmr_rerank
@@ -56,18 +57,22 @@ def answer(
     mmr: bool = False,
     fetch_k: int | None = None,
     mmr_lambda: float = 0.7,
+    expand: bool = False,
+    expand_terms: int = 5,
 ) -> RAGResult:
     """Retrieve the top-``k`` passages for ``question`` and answer grounded in them.
 
-    With ``mmr=True``, a larger pool of ``fetch_k`` BM25 candidates is reranked by
-    Maximal Marginal Relevance down to ``k``, trading a little relevance for diversity
-    so the context is less redundant (``mmr_lambda`` tunes the balance).
+    With ``expand=True`` the *search* query is first broadened by pseudo-relevance
+    feedback (the model still sees the original question). With ``mmr=True``, a larger
+    pool of ``fetch_k`` BM25 candidates is reranked by Maximal Marginal Relevance down
+    to ``k``, trading a little relevance for diversity so the context is less redundant.
     """
+    search_q = expand_query(question, retriever, n_terms=expand_terms) if expand else question
     if mmr:
-        pool = retriever.retrieve(question, k=fetch_k or max(k * 4, 10))
+        pool = retriever.retrieve(search_q, k=fetch_k or max(k * 4, 10))
         retrieved = mmr_rerank(pool, k=k, lambda_=mmr_lambda)
     else:
-        retrieved = retriever.retrieve(question, k=k)
+        retrieved = retriever.retrieve(search_q, k=k)
     context = format_context(retrieved)
     prompt = RAG_PROMPT.format(context=context, question=question)
     text = chat(prompt, model=model, temperature=temperature, max_tokens=max_tokens)

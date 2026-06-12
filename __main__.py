@@ -52,7 +52,8 @@ def _bench(args, model: str) -> int:
     for i, item in enumerate(qa, 1):
         t0 = time.monotonic()
         rag = answer(item.question, retriever, k=args.k, model=model,
-                     mmr=args.mmr, mmr_lambda=args.mmr_lambda)
+                     mmr=args.mmr, mmr_lambda=args.mmr_lambda,
+                     expand=args.expand, expand_terms=args.expand_terms)
         base = answer_no_retrieval(item.question, model=model)
         secs = time.monotonic() - t0
         total_secs += secs
@@ -100,6 +101,10 @@ def main() -> int:
                    help="Rerank retrieved passages with MMR for diversity (less redundant context).")
     p.add_argument("--mmr-lambda", type=float, default=0.7,
                    help="MMR relevance/diversity balance, 1.0=pure BM25 (default: 0.7).")
+    p.add_argument("--expand", action="store_true",
+                   help="Broaden the search query with pseudo-relevance feedback before retrieving.")
+    p.add_argument("--expand-terms", type=int, default=5,
+                   help="Number of feedback terms to add when --expand is set (default: 5).")
     p.add_argument("--model", default=None, help=f"Model slug (default: {DEFAULT_MODEL}).")
 
     p.add_argument("--bench", action="store_true",
@@ -126,7 +131,8 @@ def main() -> int:
 
     retriever = _build_retriever(args.corpus)
     res = answer(args.question, retriever, k=args.k, model=model,
-                 mmr=args.mmr, mmr_lambda=args.mmr_lambda)
+                 mmr=args.mmr, mmr_lambda=args.mmr_lambda,
+                 expand=args.expand, expand_terms=args.expand_terms)
 
     if args.show_context:
         print("--- retrieved passages ---")

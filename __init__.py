@@ -19,6 +19,7 @@ from .bm25 import BM25, tokenize
 from .core import RAGResult, answer, answer_no_retrieval
 from .corpus import Chunk, chunk_text, load_dir, load_sample
 from .evalset import QA, SAMPLE_QA
+from .expand import expand_query
 from .llm import DEFAULT_MODEL, chat
 from .prompts import NO_CONTEXT_PROMPT, RAG_PROMPT, extract_citations, format_context
 from .rerank import mmr_rerank
@@ -38,6 +39,7 @@ __all__ = [
     "answer",
     "answer_no_retrieval",
     "chat",
+    "expand_query",
     "mmr_rerank",
     "chunk_text",
     "extract_citations",

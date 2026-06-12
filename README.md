@@ -100,6 +100,9 @@ python -m rag "What's our refund policy?" --corpus ./my_docs --k 5
 # Diversify the retrieved passages with MMR (less redundant context)
 python -m rag "Which battery powers the Kestrel-7?" --mmr --show-context
 
+# Broaden a short query with pseudo-relevance feedback before retrieving
+python -m rag "Kestrel power?" --expand --show-context
+
 # Baseline: answer with no retrieval (model memory only) — watch it guess
 python -m rag "When was Helix Dynamics founded?" --no-retrieval
 
@@ -148,6 +151,23 @@ mmr=True)`); `--mmr-lambda` tunes the balance (`1.0` = plain BM25, lower = more 
 from rag import answer, Retriever, load_sample
 res = answer("...", Retriever(load_sample()), k=3, mmr=True, mmr_lambda=0.6)
 ```
+
+## Query expansion (pseudo-relevance feedback)
+
+A short query can miss passages that use *different words* for the same idea — ask
+"Kestrel power?" and BM25 may never reach the chunk that says "lithium battery."
+**Pseudo-relevance feedback** assumes the top hits are relevant, harvests the terms most
+prominent across them, and appends those to the query to broaden recall — no thesaurus,
+embeddings, or extra LLM call:
+
+```
+"Kestrel power?"  ──retrieve──►  top hits mention "lithium", "battery", "drone"
+        └──────────────► "Kestrel power? lithium battery drone"  ──retrieve again──► more, better passages
+```
+
+Turn it on with `--expand` (or `answer(..., expand=True)`); `--expand-terms` caps how many
+terms are added. It composes with `--mmr` (expand first, then diversify). Pure and
+deterministic — unit-tested offline.
 
 ## ⚠️ Honest caveat: lexical vs. dense retrieval
 
@@ -198,6 +218,7 @@ rag/
 ├── corpus.py      # load/chunk documents + bundled fictional knowledge base
 ├── retriever.py   # BM25 over corpus chunks (retrieve top-k)
 ├── rerank.py      # MMR reranking — diversify the retrieved passages
+├── expand.py      # pseudo-relevance-feedback query expansion
 ├── prompts.py     # grounded RAG prompt + context formatting + citation parsing
 ├── core.py        # answer() and answer_no_retrieval() (with optional mmr=True)
 ├── evalset.py     # fictional QA set for the benchmark
