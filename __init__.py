@@ -21,6 +21,7 @@ from .corpus import Chunk, chunk_text, load_dir, load_sample
 from .evalset import QA, SAMPLE_QA
 from .llm import DEFAULT_MODEL, chat
 from .prompts import NO_CONTEXT_PROMPT, RAG_PROMPT, extract_citations, format_context
+from .rerank import mmr_rerank
 from .retriever import Retrieved, Retriever
 
 __all__ = [
@@ -37,6 +38,7 @@ __all__ = [
     "answer",
     "answer_no_retrieval",
     "chat",
+    "mmr_rerank",
     "chunk_text",
     "extract_citations",
     "format_context",

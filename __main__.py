@@ -51,7 +51,8 @@ def _bench(args, model: str) -> int:
 
     for i, item in enumerate(qa, 1):
         t0 = time.monotonic()
-        rag = answer(item.question, retriever, k=args.k, model=model)
+        rag = answer(item.question, retriever, k=args.k, model=model,
+                     mmr=args.mmr, mmr_lambda=args.mmr_lambda)
         base = answer_no_retrieval(item.question, model=model)
         secs = time.monotonic() - t0
         total_secs += secs
@@ -95,6 +96,10 @@ def main() -> int:
                    help="Baseline: answer without retrieval (model memory only).")
     p.add_argument("--show-context", action="store_true",
                    help="Print the retrieved passages and their BM25 scores.")
+    p.add_argument("--mmr", action="store_true",
+                   help="Rerank retrieved passages with MMR for diversity (less redundant context).")
+    p.add_argument("--mmr-lambda", type=float, default=0.7,
+                   help="MMR relevance/diversity balance, 1.0=pure BM25 (default: 0.7).")
     p.add_argument("--model", default=None, help=f"Model slug (default: {DEFAULT_MODEL}).")
 
     p.add_argument("--bench", action="store_true",
@@ -120,7 +125,8 @@ def main() -> int:
         return 0
 
     retriever = _build_retriever(args.corpus)
-    res = answer(args.question, retriever, k=args.k, model=model)
+    res = answer(args.question, retriever, k=args.k, model=model,
+                 mmr=args.mmr, mmr_lambda=args.mmr_lambda)
 
     if args.show_context:
         print("--- retrieved passages ---")

@@ -20,6 +20,7 @@ from dataclasses import dataclass, field
 
 from .llm import chat
 from .prompts import NO_CONTEXT_PROMPT, RAG_PROMPT, extract_citations, format_context
+from .rerank import mmr_rerank
 from .retriever import Retrieved, Retriever
 
 
@@ -52,9 +53,21 @@ def answer(
     model: str | None = None,
     temperature: float = 0.0,
     max_tokens: int = 512,
+    mmr: bool = False,
+    fetch_k: int | None = None,
+    mmr_lambda: float = 0.7,
 ) -> RAGResult:
-    """Retrieve the top-``k`` passages for ``question`` and answer grounded in them."""
-    retrieved = retriever.retrieve(question, k=k)
+    """Retrieve the top-``k`` passages for ``question`` and answer grounded in them.
+
+    With ``mmr=True``, a larger pool of ``fetch_k`` BM25 candidates is reranked by
+    Maximal Marginal Relevance down to ``k``, trading a little relevance for diversity
+    so the context is less redundant (``mmr_lambda`` tunes the balance).
+    """
+    if mmr:
+        pool = retriever.retrieve(question, k=fetch_k or max(k * 4, 10))
+        retrieved = mmr_rerank(pool, k=k, lambda_=mmr_lambda)
+    else:
+        retrieved = retriever.retrieve(question, k=k)
     context = format_context(retrieved)
     prompt = RAG_PROMPT.format(context=context, question=question)
     text = chat(prompt, model=model, temperature=temperature, max_tokens=max_tokens)

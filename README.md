@@ -97,6 +97,9 @@ python -m rag "Which battery powers the Kestrel-7?" --show-context
 # Point it at your own documents (.txt / .md)
 python -m rag "What's our refund policy?" --corpus ./my_docs --k 5
 
+# Diversify the retrieved passages with MMR (less redundant context)
+python -m rag "Which battery powers the Kestrel-7?" --mmr --show-context
+
 # Baseline: answer with no retrieval (model memory only) — watch it guess
 python -m rag "When was Helix Dynamics founded?" --no-retrieval
 
@@ -124,6 +127,26 @@ from rag import BM25
 
 bm25 = BM25().index(["the cat sat", "stock prices rose on tuesday"])
 print(bm25.search("tuesday stocks", k=1))   # [(1, 0.60...)]  -> doc 1 wins on "tuesday"
+```
+
+## Diversity reranking (MMR)
+
+Plain BM25 ranks by relevance alone, so the top-`k` passages can be near-duplicates —
+three chunks all saying the same thing, wasting the context window and crowding out the
+*other* fact the question needs. **Maximal Marginal Relevance** (Carbonell & Goldstein,
+1998) reranks a larger candidate pool to be relevant **and** diverse:
+
+```
+MMR = argmax_d  [ λ · relevance(d) − (1 − λ) · max similarity(d, already-chosen) ]
+```
+
+Here relevance is the (normalized) BM25 score and similarity is token Jaccard — pure and
+deterministic, so it's unit-tested offline. Turn it on with `--mmr` (or `answer(...,
+mmr=True)`); `--mmr-lambda` tunes the balance (`1.0` = plain BM25, lower = more diverse).
+
+```python
+from rag import answer, Retriever, load_sample
+res = answer("...", Retriever(load_sample()), k=3, mmr=True, mmr_lambda=0.6)
 ```
 
 ## ⚠️ Honest caveat: lexical vs. dense retrieval
@@ -174,8 +197,9 @@ rag/
 ├── bm25.py        # inverted index + BM25 scoring — the from-scratch retriever
 ├── corpus.py      # load/chunk documents + bundled fictional knowledge base
 ├── retriever.py   # BM25 over corpus chunks (retrieve top-k)
+├── rerank.py      # MMR reranking — diversify the retrieved passages
 ├── prompts.py     # grounded RAG prompt + context formatting + citation parsing
-├── core.py        # answer() and answer_no_retrieval()
+├── core.py        # answer() and answer_no_retrieval() (with optional mmr=True)
 ├── evalset.py     # fictional QA set for the benchmark
 ├── llm.py         # OpenRouter HTTP wrapper (stdlib only)
 ├── __main__.py    # CLI (ask, --show-context, --corpus, --no-retrieval, --bench)
